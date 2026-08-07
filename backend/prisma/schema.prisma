@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  DEVELOPER
+  VIEWER
+}
+
+enum Provider {
+  JENKINS
+  VERCEL
+  GITHUB_ACTIONS
+  AWS
+  FIREBASE
+}
+
+enum Status {
+  SUCCESS
+  FAILED
+  RUNNING
+  CANCELLED
+  QUEUED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(VIEWER)
+  createdAt DateTime @default(now())
+}
+
+model Project {
+  id             String              @id @default(uuid())
+  name           String
+  repoUrl        String?
+  provider       Provider
+  providerConfig Json
+  deployments    Deployment[]
+  tickets        Ticket[]
+  credentials    ProviderCredential[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+}
+
+model ProviderCredential {
+  id              String    @id @default(uuid())
+  project         Project   @relation(fields: [projectId], references: [id])
+  projectId       String
+  provider        Provider
+  valueCiphertext String
+  valueIv         String
+  valueTag        String
+  maskedPreview   String
+  isValid         Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  rotatedAt       DateTime?
+
+  @@unique([projectId, provider])
+}
+
+model Deployment {
+  id         String   @id @default(uuid())
+  project    Project  @relation(fields: [projectId], references: [id])
+  projectId  String
+  provider   Provider
+  status     Status
+  commitSha  String?
+  url        String?
+  logUrl     String?
+  durationMs Int?
+  startedAt  DateTime
+  finishedAt DateTime?
+
+  @@index([projectId, startedAt])
+}
+
+model Ticket {
+  id           String       @id @default(uuid())
+  project      Project      @relation(fields: [projectId], references: [id])
+  projectId    String
+  deploymentId String?
+  title        String
+  description  String?
+  priority     Priority     @default(MEDIUM)
+  status       TicketStatus @default(OPEN)
+  assignedTo   String?
+  createdAt    DateTime     @default(now())
+
+  @@index([projectId, status])
+}
