@@ -10,7 +10,12 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(16),
   JWT_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
-  CREDENTIALS_MASTER_KEY: z.string().min(16),
+  CREDENTIALS_MASTER_KEY: z
+    .string()
+    .min(1)
+    .refine((key) => Buffer.from(key, 'base64').length === 32, {
+      message: 'CREDENTIALS_MASTER_KEY must decode to exactly 32 bytes (run: openssl rand -base64 32)',
+    }),
 });
 
 const parsed = envSchema.safeParse(process.env);
