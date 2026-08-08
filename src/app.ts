@@ -1,5 +1,5 @@
 import express, { type Express } from 'express';
-import { authRouter } from './routes/auth';
+import { apiRouter } from './routes';
 
 export function createApp(): Express {
   const app = express();
@@ -10,7 +10,7 @@ export function createApp(): Express {
     res.json({ status: 'ok' });
   });
 
-  app.use('/api/auth', authRouter);
+  app.use('/api', apiRouter);
 
   return app;
 }
