@@ -26,9 +26,9 @@ Dashboard interno que centraliza el estado de pipelines, builds y despliegues de
 | CI/CD del propio proyecto | Jenkins |
 | Notificaciones en tiempo real | Socket.io (opcional, fase avanzada) |
 
-**Layout del repositorio:** monorepo con dos carpetas independientes, `backend/` y `frontend/`, cada una con su propio `package.json` y lockfile.
+**Layout del repositorio:** este repositorio contiene SOLO el **backend** (config en la raíz: `package.json`, `tsconfig.json`, `src/`, `test/`, `prisma/`). El frontend (React + Vite + TypeScript) vive en un proyecto/repositorio separado.
 
-**Alcance actual (fase backend):** este plan cubre solo el `backend/`, incluyendo un módulo para ingresar y guardar de forma cifrada las API keys de **Vercel, Jenkins, GitHub y AWS**. Las filas de React/Vite/TanStack Query/Recharts/Tailwind se implementan en un plan de frontend posterior (Fase 11).
+**Alcance actual (fase backend):** este plan cubre solo el backend, incluyendo un módulo para ingresar y guardar de forma cifrada las API keys de **Vercel, Jenkins, GitHub y AWS**. React/Vite/TanStack Query/Recharts/Tailwind se implementan en el proyecto frontend separado (Fase 11).
 
 ### 2.1 Política de dependencias — paquetes prohibidos (supply-chain)
 
@@ -310,7 +310,7 @@ El backend expone un CRUD de credenciales por proyecto para Vercel, Jenkins, Git
 > El frontend NO se implementa en este plan. Se creará un documento **`plan-implementacion-frontend.md`** separado cuando el backend esté completo y testeado.
 
 ### Fase 0 — Setup base del backend (1 semana)
-- Carpeta `backend/`, TypeScript configurado, Prettier
+- TypeScript configurado en la raíz del repo, Prettier
 - ESLint pineado a una versión anterior a la comprometida (validar que su árbol no incluya `flat-cache`/`file-entry-cache`/`keyv` — ver sección 2.1)
 - Tests con **Node test runner** nativo (`node --test`)
 - Docker Compose local con PostgreSQL + Redis
@@ -364,8 +364,8 @@ El backend expone un CRUD de credenciales por proyecto para Vercel, Jenkins, Git
 - Webhooks de Jenkins/Vercel en lugar de polling
 - Auditoría de acciones (`AuditLog`)
 
-### Fase 11 — Plan del frontend (POSTERIOR — no se implementa aún)
-- Cuando el backend esté completo y testeado, crear `plan-implementacion-frontend.md`
+### Fase 11 — Proyecto frontend (SEPARADO — no se implementa en este repo)
+- Cuando el backend esté completo y testeado, crear el proyecto frontend React + Vite en un repositorio aparte, con su propio plan
 - Ese plan cubrirá: React + Vite + TypeScript, TanStack Query, Recharts, Tailwind, login, CRUD de proyectos, gestión visual de API keys, dashboard con métricas, vista de deployments y tickets
 - El frontend consumirá solo los endpoints del backend ya definidos aquí
 
@@ -379,32 +379,32 @@ pipeline {
   stages {
     stage('Install') {
       steps {
-        sh 'cd backend && npm ci'
+        sh 'npm ci'
       }
     }
     stage('Dependency Audit') {
       steps {
-        sh 'cd backend && npm audit --audit-level=high && node ../scripts/check-banned-deps.mjs'
+        sh 'npm audit --audit-level=high && node scripts/check-banned-deps.mjs'
       }
     }
     stage('Lint & Type Check') {
       steps {
-        sh 'cd backend && npm run lint && npx tsc --noEmit'
+        sh 'npm run lint && npx tsc --noEmit'
       }
     }
     stage('Test') {
       steps {
-        sh 'cd backend && node --test'
+        sh 'node --test'
       }
     }
     stage('Build') {
       steps {
-        sh 'cd backend && npm run build'
+        sh 'npm run build'
       }
     }
     stage('Docker Build') {
       steps {
-        sh 'docker build -t devops-dashboard-backend ./backend'
+        sh 'docker build -t devops-dashboard-backend .'
       }
     }
     stage('Push & Deploy') {
