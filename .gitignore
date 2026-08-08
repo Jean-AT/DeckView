@@ -1,0 +1,67 @@
+# ===== Environment & secrets =====
+# Local development keys (database, JWT, master encryption key, provider tokens).
+# NEVER commit these. Keep a template in .env.example with placeholder values.
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.key
+*firebase-adminsdk*.json
+serviceAccountKey.json
+
+# ===== Node.js / npm / pnpm / yarn =====
+node_modules/
+node_modules/**/.pnp
+.pnp.js
+.pnp.cjs
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ===== Build output =====
+dist/
+build/
+coverage/
+.nyc_output/
+.turbo/
+.vite/
+
+# ===== Logs =====
+logs/
+*.log
+lerna-debug.log*
+
+# ===== Databases =====
+# Local DB volumes and files (never share local data)
+pgdata/
+postgres-data/
+*.sqlite
+*.sqlite3
+*.db
+
+# ===== Docker =====
+# .env files handled above; ignore local compose overrides with real secrets
+docker-compose.override.yml
+
+# ===== IDE / editor =====
+.idea/
+!.idea/.gitignore
+*.iml
+.vscode/
+*.swp
+*.swo
+http-client.env.json
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== Prisma (transient files) =====
+# Generated client is normally not committed; schema + migrations ARE committed
+backend/node_modules/
+frontend/node_modules/
