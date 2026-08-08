@@ -2,6 +2,7 @@ import type { Provider } from '@prisma/client';
 import type { DeploymentProvider } from './types';
 import { ProviderError } from './types';
 import { VercelProvider } from './vercel';
+import { GitHubActionsProvider } from './github';
 
 export class ProviderRegistry {
   private readonly providers = new Map<Provider, DeploymentProvider>();
@@ -25,5 +26,6 @@ export class ProviderRegistry {
 
 export const providerRegistry = new ProviderRegistry();
 providerRegistry.register(new VercelProvider());
+providerRegistry.register(new GitHubActionsProvider());
 
 export * from './types';
