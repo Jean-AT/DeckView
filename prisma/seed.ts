@@ -67,7 +67,52 @@ async function main() {
     }),
   ]);
 
-  console.log(`Seed completado: ${users.length} usuarios, ${projects.length} proyectos.`);
+  const vercelProject = projects.find((p) => p.provider === 'VERCEL')!;
+  const now = Date.now();
+
+  const deployments = await Promise.all([
+    prisma.deployment.create({
+      data: {
+        projectId: vercelProject.id,
+        provider: 'VERCEL',
+        status: 'SUCCESS',
+        externalId: 'dpl_seed_1',
+        commitSha: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+        url: 'https://landing-demo.vercel.app',
+        durationMs: 87_000,
+        startedAt: new Date(now - 3 * 60 * 60 * 1000),
+        finishedAt: new Date(now - 3 * 60 * 60 * 1000 + 87_000),
+      },
+    }),
+    prisma.deployment.create({
+      data: {
+        projectId: vercelProject.id,
+        provider: 'VERCEL',
+        status: 'FAILED',
+        externalId: 'dpl_seed_2',
+        commitSha: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3',
+        url: 'https://landing-demo.vercel.app',
+        durationMs: 12_000,
+        startedAt: new Date(now - 2 * 60 * 60 * 1000),
+        finishedAt: new Date(now - 2 * 60 * 60 * 1000 + 12_000),
+      },
+    }),
+    prisma.deployment.create({
+      data: {
+        projectId: vercelProject.id,
+        provider: 'VERCEL',
+        status: 'RUNNING',
+        externalId: 'dpl_seed_3',
+        commitSha: 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4',
+        url: 'https://landing-demo.vercel.app',
+        startedAt: new Date(now - 60 * 1000),
+      },
+    }),
+  ]);
+
+  console.log(
+    `Seed completado: ${users.length} usuarios, ${projects.length} proyectos, ${deployments.length} deployments.`,
+  );
 }
 
 main()
