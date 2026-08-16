@@ -3,6 +3,7 @@ import type { DeploymentProvider } from './types';
 import { ProviderError } from './types';
 import { VercelProvider } from './vercel';
 import { GitHubActionsProvider } from './github';
+import { JenkinsProvider } from './jenkins';
 
 export class ProviderRegistry {
   private readonly providers = new Map<Provider, DeploymentProvider>();
@@ -27,5 +28,6 @@ export class ProviderRegistry {
 export const providerRegistry = new ProviderRegistry();
 providerRegistry.register(new VercelProvider());
 providerRegistry.register(new GitHubActionsProvider());
+providerRegistry.register(new JenkinsProvider());
 
 export * from './types';
