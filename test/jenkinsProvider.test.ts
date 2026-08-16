@@ -183,6 +183,7 @@ describe('Jenkins sync end-to-end', () => {
   let projectId: string;
 
   before(async () => {
+    await prisma.ticket.deleteMany();
     await prisma.deployment.deleteMany();
     await prisma.providerCredential.deleteMany();
     await prisma.project.deleteMany();

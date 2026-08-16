@@ -57,7 +57,7 @@ export class SyncService {
 
     try {
       const deployments = await provider.fetchDeployments(project, secret);
-      await this.upsertDeployments(project.id, project.provider, deployments);
+      await this.upsertDeployments(project.id, project.provider, project.name, deployments);
       return { status: 'ok', count: deployments.length };
     } catch (err) {
       if (err instanceof AuthError) {
@@ -148,6 +148,7 @@ export class SyncService {
   private async upsertDeployments(
     projectId: string,
     provider: Provider,
+    projectName: string,
     deployments: NormalizedDeployment[],
   ): Promise<void> {
     for (const deployment of deployments) {
@@ -157,7 +158,7 @@ export class SyncService {
           ? deployment.finishedAt.getTime() - deployment.startedAt.getTime()
           : null;
 
-      await prisma.deployment.upsert({
+      const row = await prisma.deployment.upsert({
         where: { projectId_externalId: { projectId, externalId: deployment.externalId } },
         update: {
           status: deployment.status,
@@ -183,7 +184,44 @@ export class SyncService {
           metadata: deployment.metadata as Prisma.InputJsonValue | undefined,
         },
       });
+
+      // Auto-crear un ticket cuando un deployment falla (sin duplicados por deployment).
+      if (deployment.status === 'FAILED') {
+        await this.ensureTicketForFailedDeployment({
+          deploymentId: row.id,
+          projectId,
+          projectName,
+          externalId: deployment.externalId,
+          url: deployment.url,
+        });
+      }
     }
+  }
+
+  private async ensureTicketForFailedDeployment(args: {
+    deploymentId: string;
+    projectId: string;
+    projectName: string;
+    externalId: string;
+    url?: string;
+  }): Promise<void> {
+    const { deploymentId, projectId, projectName, externalId, url } = args;
+
+    const existing = await prisma.ticket.findFirst({ where: { deploymentId } });
+    if (existing) return;
+
+    await prisma.ticket.create({
+      data: {
+        projectId,
+        deploymentId,
+        title: `Deploy fallido: ${projectName} (${externalId})`,
+        description: url
+          ? `Se creó automáticamente al detectar el fallo del deployment ${externalId}. Ver: ${url}`
+          : `Se creó automáticamente al detectar el fallo del deployment ${externalId}.`,
+        priority: 'HIGH',
+        status: 'OPEN',
+      },
+    });
   }
 }
 
