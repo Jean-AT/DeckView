@@ -95,6 +95,7 @@ model Deployment {
   durationMs Int?
   startedAt  DateTime
   finishedAt DateTime?
+  metadata   Json?
 
   @@unique([projectId, externalId])
   @@index([projectId, startedAt])

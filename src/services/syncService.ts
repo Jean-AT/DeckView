@@ -1,6 +1,6 @@
 import type { NormalizedDeployment } from '../providers';
 import { AuthError, ProviderError, providerRegistry } from '../providers';
-import type { Provider } from '@prisma/client';
+import type { Prisma, Provider } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { decryptSecret } from '../utils/cipher';
 
@@ -167,6 +167,7 @@ export class SyncService {
           durationMs,
           startedAt: deployment.startedAt,
           finishedAt,
+          metadata: deployment.metadata as Prisma.InputJsonValue | undefined,
         },
         create: {
           projectId,
@@ -179,6 +180,7 @@ export class SyncService {
           durationMs,
           startedAt: deployment.startedAt,
           finishedAt,
+          metadata: deployment.metadata as Prisma.InputJsonValue | undefined,
         },
       });
     }

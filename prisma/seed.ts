@@ -62,7 +62,7 @@ async function main() {
       data: {
         name: 'App AWS ECS',
         provider: 'AWS',
-        providerConfig: { cluster: 'demo-cluster', service: 'api' },
+        providerConfig: { region: 'us-east-1', cluster: 'demo-cluster', service: 'api' },
       },
     }),
   ]);

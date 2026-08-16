@@ -10,6 +10,7 @@ export interface NormalizedDeployment {
   logUrl?: string;
   startedAt: Date;
   finishedAt?: Date;
+  metadata?: Record<string, unknown>;
 }
 
 export interface DeploymentProvider {
