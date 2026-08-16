@@ -138,6 +138,37 @@ projectsRouter.post('/:id/sync', requireRole('ADMIN'), async (req, res) => {
   res.status(statusCode).json(result);
 });
 
+// POST /api/projects/:id/trigger → relanzar build en el proveedor (solo ADMIN/DEVELOPER)
+projectsRouter.post('/:id/trigger', requireRole('ADMIN', 'DEVELOPER'), async (req, res) => {
+  const params = paramsSchema.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: 'Invalid id' });
+    return;
+  }
+  const { id } = params.data;
+
+  const project = await prisma.project.findUnique({ where: { id }, select: { id: true } });
+  if (!project) {
+    res.status(404).json({ error: 'Project not found' });
+    return;
+  }
+
+  const result = await syncService.triggerDeploy(id);
+
+  const statusCode =
+    result.status === 'ok'
+      ? 200
+      : result.status === 'unsupported'
+        ? 400
+        : result.status === 'auth_error'
+          ? 401
+          : result.status === 'skipped'
+            ? 409
+            : 500;
+
+  res.status(statusCode).json(result);
+});
+
 // POST /api/projects → crear (solo ADMIN/DEVELOPER)
 projectsRouter.post('/', requireRole('ADMIN', 'DEVELOPER'), async (req, res) => {
   const parsed = projectCreateSchema.safeParse(req.body);

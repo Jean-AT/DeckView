@@ -30,7 +30,6 @@ const paramsSchema = z.object({
   id: z.string().uuid(),
 });
 
-// Campos permitidos en las respuestas — NUNCA se devuelve el password.
 const SAFE_SELECT = {
   id: true,
   name: true,
@@ -41,10 +40,8 @@ const SAFE_SELECT = {
 
 export const usersRouter = Router();
 
-// Todas las rutas de usuarios requieren ADMIN.
 usersRouter.use(requireAuth, requireRole('ADMIN'));
 
-// GET /api/users → listar (paginado)
 usersRouter.get('/', async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 20, 100);
   const offset = Number(req.query.offset) || 0;
@@ -62,7 +59,6 @@ usersRouter.get('/', async (req, res) => {
   res.json({ data, total, limit, offset });
 });
 
-// GET /api/users/:id → detalle
 usersRouter.get('/:id', async (req, res) => {
   const params = paramsSchema.safeParse(req.params);
   if (!params.success) {
@@ -83,7 +79,6 @@ usersRouter.get('/:id', async (req, res) => {
   res.json(user);
 });
 
-// POST /api/users → crear usuario con rol elegido
 usersRouter.post('/', async (req, res) => {
   const parsed = userCreateSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -107,9 +102,7 @@ usersRouter.post('/', async (req, res) => {
   res.status(201).json(user);
 });
 
-// PATCH /api/users/:id/password → resetear contraseña
-// (OJO: registrada ANTES que PATCH /:id para que /:id/password no caiga en :id)
-usersRouter.patch('/:id/password', async (req, res) => {
+  usersRouter.patch('/:id/password', async (req, res) => {
   const params = paramsSchema.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: 'Invalid id' });
