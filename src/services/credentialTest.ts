@@ -23,7 +23,7 @@ function testAwsCredential(value: string): CredentialTestResult {
     return { ok: false, error: 'AWS credential must be a JSON object' };
   }
 
-  if (typeof parsed !== 'object' || parsed === null) {
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
     return { ok: false, error: 'AWS credential must be a JSON object' };
   }
 
