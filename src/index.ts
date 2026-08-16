@@ -1,5 +1,6 @@
 import { createApp } from './app';
 import { env } from './config/env';
+import { startSyncScheduler, stopSyncScheduler } from './jobs/syncJob';
 
 const app = createApp();
 
@@ -8,7 +9,10 @@ const server = app.listen(env.PORT, () => {
   console.log(`✅ Backend listening on http://localhost:${env.PORT}`);
 });
 
+startSyncScheduler();
+
 function shutdown(): void {
+  stopSyncScheduler();
   server.close(() => process.exit(0));
 }
 

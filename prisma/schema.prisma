@@ -88,6 +88,7 @@ model Deployment {
   projectId  String
   provider   Provider
   status     Status
+  externalId String?
   commitSha  String?
   url        String?
   logUrl     String?
@@ -95,6 +96,7 @@ model Deployment {
   startedAt  DateTime
   finishedAt DateTime?
 
+  @@unique([projectId, externalId])
   @@index([projectId, startedAt])
 }
 

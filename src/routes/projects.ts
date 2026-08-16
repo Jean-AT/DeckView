@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { Prisma, Provider } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { requireAuth, requireRole } from '../middleware/auth';
+import { syncService } from '../services/syncService';
 
 // ============================================================================
 // Schemas de validación (Zod)
@@ -75,6 +76,66 @@ projectsRouter.get('/:id', async (req, res) => {
   }
 
   res.json(project);
+});
+
+// GET /api/projects/:id/deployments → historial de deployments (paginado)
+projectsRouter.get('/:id/deployments', async (req, res) => {
+  const params = paramsSchema.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: 'Invalid id' });
+    return;
+  }
+  const { id } = params.data;
+
+  const project = await prisma.project.findUnique({ where: { id }, select: { id: true } });
+  if (!project) {
+    res.status(404).json({ error: 'Project not found' });
+    return;
+  }
+
+  const limit = Math.min(Number(req.query.limit) || 20, 100);
+  const offset = Number(req.query.offset) || 0;
+
+  const [data, total] = await Promise.all([
+    prisma.deployment.findMany({
+      where: { projectId: id },
+      orderBy: { startedAt: 'desc' },
+      skip: offset,
+      take: limit,
+    }),
+    prisma.deployment.count({ where: { projectId: id } }),
+  ]);
+
+  res.json({ data, total, limit, offset });
+});
+
+// POST /api/projects/:id/sync → sincronizar con el proveedor (solo ADMIN)
+projectsRouter.post('/:id/sync', requireRole('ADMIN'), async (req, res) => {
+  const params = paramsSchema.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: 'Invalid id' });
+    return;
+  }
+  const { id } = params.data;
+
+  const project = await prisma.project.findUnique({ where: { id }, select: { id: true } });
+  if (!project) {
+    res.status(404).json({ error: 'Project not found' });
+    return;
+  }
+
+  const result = await syncService.syncProject(id);
+
+  const statusCode =
+    result.status === 'ok'
+      ? 200
+      : result.status === 'auth_error'
+        ? 401
+        : result.status === 'skipped'
+          ? 409
+          : 500;
+
+  res.status(statusCode).json(result);
 });
 
 // POST /api/projects → crear (solo ADMIN/DEVELOPER)
