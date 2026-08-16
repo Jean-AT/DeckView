@@ -13,6 +13,7 @@ describe('projects API', () => {
   let createdProjectId: string;
 
   before(async () => {
+    await prisma.providerCredential.deleteMany();
     await prisma.project.deleteMany();
     await prisma.user.deleteMany();
 
