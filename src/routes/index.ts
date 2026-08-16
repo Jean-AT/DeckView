@@ -3,6 +3,7 @@ import { authRouter } from './auth';
 import { usersRouter } from './users';
 import { projectsRouter } from './projects';
 import { credentialsRouter } from './credentials';
+import { ticketsRouter } from './tickets';
 
 export const apiRouter = Router();
 
@@ -10,6 +11,7 @@ apiRouter.use('/auth', authRouter);
 apiRouter.use('/users', usersRouter);
 apiRouter.use('/projects', projectsRouter);
 apiRouter.use('/projects/:projectId/credentials', credentialsRouter);
+apiRouter.use('/tickets', ticketsRouter);
 
 // Resultado esperado en src/app.ts (cuando ./users y ./projects existan):
 //      import { apiRouter } from './routes';

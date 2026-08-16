@@ -135,6 +135,7 @@ describe('GitHub sync end-to-end (2-provider registry)', () => {
   let projectId: string;
 
   before(async () => {
+    await prisma.ticket.deleteMany();
     await prisma.deployment.deleteMany();
     await prisma.providerCredential.deleteMany();
     await prisma.project.deleteMany();

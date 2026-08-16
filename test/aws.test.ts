@@ -178,6 +178,7 @@ describe('AWS credential format validation', () => {
   let projectId: string;
 
   before(async () => {
+    await prisma.ticket.deleteMany();
     await prisma.deployment.deleteMany();
     await prisma.providerCredential.deleteMany();
     await prisma.project.deleteMany();
@@ -247,6 +248,7 @@ describe('AWS sync end-to-end', () => {
   let originalSend: typeof ECSClient.prototype.send;
 
   before(async () => {
+    await prisma.ticket.deleteMany();
     await prisma.deployment.deleteMany();
     await prisma.providerCredential.deleteMany();
     await prisma.project.deleteMany();
