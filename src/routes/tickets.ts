@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { requireAuth, requireRole } from '../middleware/auth';
+import { audit } from '../services/audit';
 
 // ============================================================================
 // Schemas de validación (Zod)
@@ -138,6 +139,14 @@ ticketsRouter.post('/', requireRole('ADMIN', 'DEVELOPER'), async (req, res) => {
     select: TICKET_SELECT,
   });
 
+  await audit.log({
+    userId: req.user!.id,
+    action: 'ticket.create',
+    resourceType: 'TICKET',
+    resourceId: ticket.id,
+    details: { projectId: parsed.data.projectId },
+  });
+
   res.status(201).json(ticket);
 });
 
@@ -172,6 +181,14 @@ ticketsRouter.patch('/:id', requireRole('ADMIN', 'DEVELOPER'), async (req, res) 
     select: TICKET_SELECT,
   });
 
+  await audit.log({
+    userId: req.user!.id,
+    action: 'ticket.update',
+    resourceType: 'TICKET',
+    resourceId: params.data.id,
+    details: parsed.data,
+  });
+
   res.json(updated);
 });
 
@@ -190,6 +207,13 @@ ticketsRouter.delete('/:id', requireRole('ADMIN'), async (req, res) => {
   }
 
   await prisma.ticket.delete({ where: { id: params.data.id } });
+
+  await audit.log({
+    userId: req.user!.id,
+    action: 'ticket.delete',
+    resourceType: 'TICKET',
+    resourceId: params.data.id,
+  });
 
   res.status(204).end();
 });

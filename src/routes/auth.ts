@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma';
 import { hashPassword, verifyPassword } from '../utils/password';
 import { signToken, verifyToken } from '../utils/jwt';
 import { requireAuth } from '../middleware/auth';
+import { audit } from '../services/audit';
 
 export const authRouter = Router();
 
@@ -52,6 +53,14 @@ authRouter.post('/register', async (req, res) => {
     data: { name, email, password: await hashPassword(password), role },
   });
 
+  await audit.log({
+    userId: user.id,
+    action: 'auth.register',
+    resourceType: 'USER',
+    resourceId: user.id,
+    details: { email },
+  });
+
   res.status(201).json({
     user: { id: user.id, name: user.name, email: user.email, role: user.role },
     ...(await issueTokens(user)),
@@ -73,6 +82,13 @@ authRouter.post('/login', async (req, res) => {
     res.status(401).json({ error: 'Invalid credentials' });
     return;
   }
+
+  await audit.log({
+    userId: user.id,
+    action: 'auth.login',
+    resourceType: 'USER',
+    resourceId: user.id,
+  });
 
   res.json({
     user: { id: user.id, name: user.name, email: user.email, role: user.role },

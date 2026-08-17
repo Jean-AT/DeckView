@@ -2,6 +2,12 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { testCredential } from '../src/services/credentialTest';
 
+const FIREBASE_SA = JSON.stringify({
+  client_email: 'deploy@devops.iam.gserviceaccount.com',
+  private_key: '-----BEGIN PRIVATE KEY-----\nMIIEvQ\n-----END PRIVATE KEY-----\n',
+  project_id: 'devops-dashboard',
+});
+
 describe('testCredential', () => {
   it('accepts valid Vercel keys', () => {
     assert.deepEqual(testCredential('VERCEL', 'vercel_abc123def456'), { ok: true });
@@ -29,7 +35,6 @@ describe('testCredential', () => {
 
   it('accepts any sufficiently long key for formatless providers', () => {
     assert.deepEqual(testCredential('JENKINS', 'user:apitoken'), { ok: true });
-    assert.deepEqual(testCredential('FIREBASE', '0123456789'), { ok: true });
   });
 
   it('rejects keys shorter than 10 chars', () => {
@@ -103,6 +108,46 @@ describe('testCredential', () => {
         }),
       ),
       { ok: false, error: 'AWS sessionToken must be a string' },
+    );
+  });
+
+  it('accepts a valid Firebase service account', () => {
+    assert.deepEqual(testCredential('FIREBASE', FIREBASE_SA), { ok: true });
+  });
+
+  it('rejects Firebase credentials that are not valid service accounts', () => {
+    assert.deepEqual(testCredential('FIREBASE', 'not-json'), {
+      ok: false,
+      error: 'Firebase credential must be a JSON service account',
+    });
+
+    assert.deepEqual(
+      testCredential('FIREBASE', JSON.stringify({ client_email: 'deploy@devops.iam.gserviceaccount.com' })),
+      { ok: false, error: 'Invalid Firebase private_key' },
+    );
+
+    assert.deepEqual(
+      testCredential(
+        'FIREBASE',
+        JSON.stringify({
+          client_email: 'plain@example.com',
+          private_key: '-----BEGIN PRIVATE KEY-----',
+          project_id: 'p',
+        }),
+      ),
+      { ok: false, error: 'Invalid Firebase client_email' },
+    );
+
+    assert.deepEqual(
+      testCredential(
+        'FIREBASE',
+        JSON.stringify({
+          client_email: 'deploy@devops.iam.gserviceaccount.com',
+          private_key: '-----BEGIN PRIVATE KEY-----',
+          project_id: '',
+        }),
+      ),
+      { ok: false, error: 'Invalid Firebase project_id' },
     );
   });
 });

@@ -20,6 +20,7 @@ pipeline {
     JWT_SECRET             = credentials('JWT_SECRET')
     JWT_REFRESH_SECRET     = credentials('JWT_REFRESH_SECRET')
     CREDENTIALS_MASTER_KEY = credentials('CREDENTIALS_MASTER_KEY')
+    WEBHOOK_SECRET         = credentials('WEBHOOK_SECRET')
   }
 
   parameters {
