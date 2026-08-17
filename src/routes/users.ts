@@ -4,6 +4,7 @@ import type { Role } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { hashPassword } from '../utils/password';
+import { audit } from '../services/audit';
 
 const ROLE_ENUM = z.enum(['ADMIN', 'DEVELOPER', 'VIEWER']);
 
@@ -99,6 +100,14 @@ usersRouter.post('/', async (req, res) => {
     select: SAFE_SELECT,
   });
 
+  await audit.log({
+    userId: req.user!.id,
+    action: 'user.create',
+    resourceType: 'USER',
+    resourceId: user.id,
+    details: { email, role },
+  });
+
   res.status(201).json(user);
 });
 
@@ -124,6 +133,13 @@ usersRouter.post('/', async (req, res) => {
   await prisma.user.update({
     where: { id: params.data.id },
     data: { password: await hashPassword(parsed.data.password) },
+  });
+
+  await audit.log({
+    userId: req.user!.id,
+    action: 'user.update_password',
+    resourceType: 'USER',
+    resourceId: params.data.id,
   });
 
   res.json({ ok: true });
@@ -180,6 +196,14 @@ usersRouter.patch('/:id', async (req, res) => {
     select: SAFE_SELECT,
   });
 
+  await audit.log({
+    userId: req.user!.id,
+    action: 'user.update',
+    resourceType: 'USER',
+    resourceId: id,
+    details: data,
+  });
+
   res.json(updated);
 });
 
@@ -204,6 +228,13 @@ usersRouter.delete('/:id', async (req, res) => {
   }
 
   await prisma.user.delete({ where: { id } });
+
+  await audit.log({
+    userId: req.user!.id,
+    action: 'user.delete',
+    resourceType: 'USER',
+    resourceId: id,
+  });
 
   res.status(204).end();
 });

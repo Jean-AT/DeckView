@@ -4,6 +4,7 @@ import type { Prisma, Provider } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { syncService } from '../services/syncService';
+import { audit } from '../services/audit';
 
 // ============================================================================
 // Schemas de validación (Zod)
@@ -126,6 +127,14 @@ projectsRouter.post('/:id/sync', requireRole('ADMIN'), async (req, res) => {
 
   const result = await syncService.syncProject(id);
 
+  await audit.log({
+    userId: req.user!.id,
+    action: 'deploy.sync',
+    resourceType: 'PROJECT',
+    resourceId: id,
+    details: { status: result.status },
+  });
+
   const statusCode =
     result.status === 'ok'
       ? 200
@@ -156,6 +165,14 @@ projectsRouter.post('/:id/trigger', requireRole('ADMIN', 'DEVELOPER'), async (re
   }
 
   const result = await syncService.triggerDeploy(id);
+
+  await audit.log({
+    userId: req.user!.id,
+    action: 'deploy.trigger',
+    resourceType: 'PROJECT',
+    resourceId: id,
+    details: { status: result.status },
+  });
 
   const statusCode =
     result.status === 'ok'
@@ -192,6 +209,14 @@ projectsRouter.post('/', requireRole('ADMIN', 'DEVELOPER'), async (req, res) => 
   const project = await prisma.project.create({
     data: { name, repoUrl, provider, providerConfig: providerConfig ?? {} },
     select: SAFE_SELECT,
+  });
+
+  await audit.log({
+    userId: req.user!.id,
+    action: 'project.create',
+    resourceType: 'PROJECT',
+    resourceId: project.id,
+    details: { name, provider },
   });
 
   res.status(201).json(project);
@@ -248,6 +273,14 @@ projectsRouter.patch('/:id', requireRole('ADMIN', 'DEVELOPER'), async (req, res)
     select: SAFE_SELECT,
   });
 
+  await audit.log({
+    userId: req.user!.id,
+    action: 'project.update',
+    resourceType: 'PROJECT',
+    resourceId: id,
+    details: data,
+  });
+
   res.json(updated);
 });
 
@@ -267,6 +300,13 @@ projectsRouter.delete('/:id', requireRole('ADMIN', 'DEVELOPER'), async (req, res
   }
 
   await prisma.project.delete({ where: { id } });
+
+  await audit.log({
+    userId: req.user!.id,
+    action: 'project.delete',
+    resourceType: 'PROJECT',
+    resourceId: id,
+  });
 
   res.status(204).end();
 });

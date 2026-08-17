@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { decryptSecret, encryptSecret, maskSecret } from '../utils/cipher';
 import { testCredential } from '../services/credentialTest';
+import { audit } from '../services/audit';
 
 // ============================================================================
 // Schemas de validación (Zod)
@@ -115,6 +116,14 @@ credentialsRouter.post('/', async (req, res) => {
     select: PUBLIC_SELECT,
   });
 
+  await audit.log({
+    userId: req.user!.id,
+    action: 'credential.create',
+    resourceType: 'CREDENTIAL',
+    resourceId: credential.id,
+    details: { projectId, provider: parsed.data.provider },
+  });
+
   res.status(201).json(credential);
 });
 
@@ -158,6 +167,14 @@ credentialsRouter.put('/:provider', async (req, res) => {
       rotatedAt: new Date(),
     },
     select: PUBLIC_SELECT,
+  });
+
+  await audit.log({
+    userId: req.user!.id,
+    action: 'credential.rotate',
+    resourceType: 'CREDENTIAL',
+    resourceId: existing.id,
+    details: { projectId, provider },
   });
 
   res.json(updated);
@@ -222,6 +239,14 @@ credentialsRouter.delete('/:provider', async (req, res) => {
   }
 
   await prisma.providerCredential.delete({ where: { id: existing.id } });
+
+  await audit.log({
+    userId: req.user!.id,
+    action: 'credential.delete',
+    resourceType: 'CREDENTIAL',
+    resourceId: existing.id,
+    details: { projectId, provider },
+  });
 
   res.status(204).end();
 });

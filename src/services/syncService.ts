@@ -1,10 +1,9 @@
-import type { NormalizedDeployment } from '../providers';
 import { AuthError, ProviderError, providerRegistry } from '../providers';
-import type { Prisma, Provider } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { decryptSecret } from '../utils/cipher';
 import { createRateLimiter, type RateLimiter } from '../utils/rateLimiter';
 import { env } from '../config/env';
+import { upsertDeployment } from './deployments';
 
 export type SyncStatus = 'ok' | 'skipped' | 'auth_error' | 'rate_limited' | 'error';
 
@@ -71,7 +70,9 @@ export class SyncService {
 
     try {
       const deployments = await provider.fetchDeployments(project, secret);
-      await this.upsertDeployments(project.id, project.provider, project.name, deployments);
+      for (const deployment of deployments) {
+        await upsertDeployment(project.id, project.provider, project.name, deployment);
+      }
       return { status: 'ok', count: deployments.length };
     } catch (err) {
       if (err instanceof AuthError) {
@@ -161,85 +162,6 @@ export class SyncService {
       }
       throw err;
     }
-  }
-
-  private async upsertDeployments(
-    projectId: string,
-    provider: Provider,
-    projectName: string,
-    deployments: NormalizedDeployment[],
-  ): Promise<void> {
-    for (const deployment of deployments) {
-      const finishedAt = deployment.finishedAt ?? null;
-      const durationMs =
-        deployment.finishedAt && deployment.finishedAt >= deployment.startedAt
-          ? deployment.finishedAt.getTime() - deployment.startedAt.getTime()
-          : null;
-
-      const row = await prisma.deployment.upsert({
-        where: { projectId_externalId: { projectId, externalId: deployment.externalId } },
-        update: {
-          status: deployment.status,
-          commitSha: deployment.commitSha ?? null,
-          url: deployment.url ?? null,
-          logUrl: deployment.logUrl ?? null,
-          durationMs,
-          startedAt: deployment.startedAt,
-          finishedAt,
-          metadata: deployment.metadata as Prisma.InputJsonValue | undefined,
-        },
-        create: {
-          projectId,
-          provider,
-          externalId: deployment.externalId,
-          status: deployment.status,
-          commitSha: deployment.commitSha ?? null,
-          url: deployment.url ?? null,
-          logUrl: deployment.logUrl ?? null,
-          durationMs,
-          startedAt: deployment.startedAt,
-          finishedAt,
-          metadata: deployment.metadata as Prisma.InputJsonValue | undefined,
-        },
-      });
-
-      // Auto-crear un ticket cuando un deployment falla (sin duplicados por deployment).
-      if (deployment.status === 'FAILED') {
-        await this.ensureTicketForFailedDeployment({
-          deploymentId: row.id,
-          projectId,
-          projectName,
-          externalId: deployment.externalId,
-          url: deployment.url,
-        });
-      }
-    }
-  }
-
-  private async ensureTicketForFailedDeployment(args: {
-    deploymentId: string;
-    projectId: string;
-    projectName: string;
-    externalId: string;
-    url?: string;
-  }): Promise<void> {
-    const { deploymentId, projectId, projectName, externalId, url } = args;
-
-    const existing = await prisma.ticket.findFirst({ where: { deploymentId } });
-    if (existing) return;
-
-    await prisma.ticket.create({
-      data: {
-        projectId,
-        deploymentId,
-        title: `Deploy fallido: ${projectName} (${externalId})`,
-        description: url
-          ? `Se creó automáticamente al detectar el fallo del deployment ${externalId}. Ver: ${url}`
-          : `Se creó automáticamente al detectar el fallo del deployment ${externalId}.`,
-        priority: 'HIGH',
-        status: 'OPEN',
-      },
-    });
   }
 }
 

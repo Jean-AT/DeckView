@@ -5,6 +5,7 @@ import { VercelProvider } from './vercel';
 import { GitHubActionsProvider } from './github';
 import { JenkinsProvider } from './jenkins';
 import { AwsEcsProvider } from './aws';
+import { FirebaseHostingProvider } from './firebase';
 
 export class ProviderRegistry {
   private readonly providers = new Map<Provider, DeploymentProvider>();
@@ -31,5 +32,6 @@ providerRegistry.register(new VercelProvider());
 providerRegistry.register(new GitHubActionsProvider());
 providerRegistry.register(new JenkinsProvider());
 providerRegistry.register(new AwsEcsProvider());
+providerRegistry.register(new FirebaseHostingProvider());
 
 export * from './types';

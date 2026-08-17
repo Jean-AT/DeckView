@@ -44,9 +44,42 @@ function testAwsCredential(value: string): CredentialTestResult {
   return { ok: true };
 }
 
+function testFirebaseCredential(value: string): CredentialTestResult {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return { ok: false, error: 'Firebase credential must be a JSON service account' };
+  }
+
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    return { ok: false, error: 'Firebase credential must be a JSON service account' };
+  }
+
+  const { client_email, private_key, project_id } = parsed as Record<string, unknown>;
+
+  if (typeof client_email !== 'string' || !client_email.endsWith('gserviceaccount.com')) {
+    return { ok: false, error: 'Invalid Firebase client_email' };
+  }
+
+  if (typeof private_key !== 'string' || !private_key.includes('PRIVATE KEY')) {
+    return { ok: false, error: 'Invalid Firebase private_key' };
+  }
+
+  if (typeof project_id !== 'string' || project_id.length === 0) {
+    return { ok: false, error: 'Invalid Firebase project_id' };
+  }
+
+  return { ok: true };
+}
+
 export function testCredential(provider: Provider, value: string): CredentialTestResult {
   if (provider === 'AWS') {
     return testAwsCredential(value);
+  }
+
+  if (provider === 'FIREBASE') {
+    return testFirebaseCredential(value);
   }
 
   const pattern = PROVIDER_KEY_PATTERNS[provider];
