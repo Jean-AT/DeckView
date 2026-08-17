@@ -11,6 +11,7 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   SYNC_CRON_SCHEDULE: z.string().default('*/5 * * * *'),
+  OUTBOUND_RATE_LIMIT_PER_MINUTE: z.coerce.number().min(1).default(30),
   CREDENTIALS_MASTER_KEY: z
     .string()
     .min(1)

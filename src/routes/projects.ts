@@ -133,7 +133,9 @@ projectsRouter.post('/:id/sync', requireRole('ADMIN'), async (req, res) => {
         ? 401
         : result.status === 'skipped'
           ? 409
-          : 500;
+          : result.status === 'rate_limited'
+            ? 429
+            : 500;
 
   res.status(statusCode).json(result);
 });
@@ -164,7 +166,9 @@ projectsRouter.post('/:id/trigger', requireRole('ADMIN', 'DEVELOPER'), async (re
           ? 401
           : result.status === 'skipped'
             ? 409
-            : 500;
+            : result.status === 'rate_limited'
+              ? 429
+              : 500;
 
   res.status(statusCode).json(result);
 });

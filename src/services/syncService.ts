@@ -3,8 +3,10 @@ import { AuthError, ProviderError, providerRegistry } from '../providers';
 import type { Prisma, Provider } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { decryptSecret } from '../utils/cipher';
+import { createRateLimiter, type RateLimiter } from '../utils/rateLimiter';
+import { env } from '../config/env';
 
-export type SyncStatus = 'ok' | 'skipped' | 'auth_error' | 'error';
+export type SyncStatus = 'ok' | 'skipped' | 'auth_error' | 'rate_limited' | 'error';
 
 export interface SyncResult {
   status: SyncStatus;
@@ -20,6 +22,14 @@ export interface TriggerResult {
 }
 
 export class SyncService {
+  // Limiter saliente hacia las APIs externas (inyectable en tests).
+  constructor(
+    private readonly limiter: RateLimiter = createRateLimiter(
+      env.OUTBOUND_RATE_LIMIT_PER_MINUTE,
+      60_000,
+    ),
+  ) {}
+
   async syncProject(projectId: string): Promise<SyncResult> {
     const project = await prisma.project.findUnique({
       where: { id: projectId },
@@ -54,6 +64,10 @@ export class SyncService {
       iv: credential.valueIv,
       tag: credential.valueTag,
     });
+
+    if (!this.limiter.allow(project.provider)) {
+      return { status: 'rate_limited', error: 'Outbound rate limit exceeded' };
+    }
 
     try {
       const deployments = await provider.fetchDeployments(project, secret);
@@ -126,6 +140,10 @@ export class SyncService {
       iv: credential.valueIv,
       tag: credential.valueTag,
     });
+
+    if (!this.limiter.allow(project.provider)) {
+      return { status: 'rate_limited', error: 'Outbound rate limit exceeded' };
+    }
 
     try {
       await provider.triggerDeploy(project, secret);

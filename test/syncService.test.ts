@@ -169,4 +169,79 @@ describe('SyncService', () => {
 
     assert.equal(res.status, 403);
   });
+
+  it('returns an error for an unknown project', async () => {
+    const result = await syncService.syncProject('00000000-0000-0000-0000-000000000000');
+    assert.equal(result.status, 'error');
+    assert.equal(result.error, 'Project not found');
+  });
+
+  it('syncAll returns a result per project', async () => {
+    const extra = await request(app)
+      .post('/api/projects')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Sync Extra', provider: 'VERCEL', providerConfig: { vercelProjectId: 'prj_extra' } });
+
+    await request(app)
+      .post(`/api/projects/${extra.body.id}/credentials`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ provider: 'VERCEL', value: 'vercel_abcdefghijklmnopqrstuvwxyz' });
+
+    globalThis.fetch = async () => vercelDeployments();
+
+    const results = await syncService.syncAll();
+
+    const ok = results.filter((r) => r.status === 'ok');
+    assert.equal(ok.length, 2);
+    assert.ok(results.some((r) => r.status === 'skipped'));
+  });
+
+  it('triggerDeploy returns an error for an unknown project', async () => {
+    const result = await syncService.triggerDeploy('00000000-0000-0000-0000-000000000000');
+    assert.equal(result.status, 'error');
+  });
+
+  it('triggerDeploy skips projects without credentials', async () => {
+    const noCred = await request(app)
+      .post('/api/projects')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        name: 'Trigger No Cred',
+        provider: 'JENKINS',
+        providerConfig: { jenkinsUrl: 'http://jenkins:8080', jobName: 'no-cred' },
+      });
+
+    const result = await syncService.triggerDeploy(noCred.body.id);
+    assert.equal(result.status, 'skipped');
+  });
+
+  it('triggerDeploy marks the credential invalid on auth errors', async () => {
+    const jenkins = await request(app)
+      .post('/api/projects')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        name: 'Trigger Jenkins Fail',
+        provider: 'JENKINS',
+        providerConfig: { jenkinsUrl: 'http://jenkins:8080', jobName: 'trigger-fail' },
+      });
+
+    await request(app)
+      .post(`/api/projects/${jenkins.body.id}/credentials`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ provider: 'JENKINS', value: 'user:apitoken12345' });
+
+    globalThis.fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('/crumbIssuer/api/json')) return jsonResponse({});
+      return new Response('Forbidden', { status: 403 });
+    };
+
+    const result = await syncService.triggerDeploy(jenkins.body.id);
+    assert.equal(result.status, 'auth_error');
+
+    const credential = await prisma.providerCredential.findFirst({
+      where: { projectId: jenkins.body.id, provider: 'JENKINS' },
+    });
+    assert.equal(credential!.isValid, false);
+  });
 });
