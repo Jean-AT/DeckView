@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+.git/
+.idea/
+*.log
+.env
+.env.*
+!.env.example
+.dockerignore
+Dockerfile
+docker-compose*.yml
+Jenkinsfile
+README.md
+plan-implementacion-devops-dashboard.md
