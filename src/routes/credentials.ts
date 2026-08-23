@@ -21,11 +21,11 @@ const providerParamsSchema = projectParamsSchema.extend({
 
 const createSchema = z.object({
   provider: PROVIDER_ENUM,
-  value: z.string().min(1).max(500),
+  value: z.string().min(1).max(5000),
 });
 
 const rotateSchema = z.object({
-  value: z.string().min(1).max(500),
+  value: z.string().min(1).max(5000),
 });
 
 const PUBLIC_SELECT = {
