@@ -4,7 +4,7 @@ import type { DeploymentProvider, NormalizedDeployment } from './types';
 import { AuthError, ProviderError } from './types';
 
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
-const FIREBASE_API = 'https://firebase.googleapis.com/v1beta1';
+const FIREBASE_API = 'https://firebasehosting.googleapis.com/v1beta1';
 const FIREBASE_SCOPE = 'https://www.googleapis.com/auth/firebase';
 
 interface FirebaseServiceAccount {

@@ -16,7 +16,7 @@ describe('auth API', () => {
     await prisma.$disconnect();
   });
 
-  it('first registered user becomes ADMIN, tokens are issued', async () => {
+  it('registered user becomes ADMIN, tokens are issued', async () => {
     const res = await request(app).post('/api/auth/register').send({
       name: 'First Admin',
       email: 'admin@test.dev',
@@ -32,15 +32,15 @@ describe('auth API', () => {
     assert.equal(payload.role, 'ADMIN');
   });
 
-  it('second registered user becomes VIEWER', async () => {
+  it('every registered user becomes ADMIN', async () => {
     const res = await request(app).post('/api/auth/register').send({
-      name: 'Viewer Person',
+      name: 'Second Admin',
       email: 'viewer@test.dev',
       password: 'supersecret123',
     });
 
     assert.equal(res.status, 201);
-    assert.equal(res.body.user.role, 'VIEWER');
+    assert.equal(res.body.user.role, 'ADMIN');
   });
 
   it('rejects duplicate email registration', async () => {

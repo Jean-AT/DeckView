@@ -37,14 +37,15 @@ services:
       PORT: 3000
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/devops_dashboard
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required}
+      JWT_SECRET: ${JWT_SECRET:-deckview-local-jwt-secret-change-me}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-deckview-local-jwt-refresh-change-me}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
-      CREDENTIALS_MASTER_KEY: ${CREDENTIALS_MASTER_KEY:?CREDENTIALS_MASTER_KEY is required}
+      CREDENTIALS_MASTER_KEY: ${CREDENTIALS_MASTER_KEY:-bG9jYWwtZGV2LW9ubHktZG8tbm90LXVzZS1wcm9kISE=}
       SYNC_CRON_SCHEDULE: ${SYNC_CRON_SCHEDULE:-*/5 * * * *}
       OUTBOUND_RATE_LIMIT_PER_MINUTE: ${OUTBOUND_RATE_LIMIT_PER_MINUTE:-30}
-      WEBHOOK_SECRET: ${WEBHOOK_SECRET:?WEBHOOK_SECRET is required}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-deckview-local-webhook-secret-change-me}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
     ports:
       - "3000:3000"
     depends_on:
@@ -54,7 +55,13 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5

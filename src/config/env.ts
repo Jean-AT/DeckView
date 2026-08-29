@@ -5,6 +5,10 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().default(3000),
   DATABASE_URL: z.string().min(1),
+  CORS_ORIGINS: z
+    .string()
+    .default('http://localhost:5173')
+    .transform((s) => s.split(',').map((o) => o.trim()).filter(Boolean)),
   REDIS_URL: z.string().default('redis://localhost:6379'),
   JWT_SECRET: z.string().min(16),
   JWT_REFRESH_SECRET: z.string().min(16),

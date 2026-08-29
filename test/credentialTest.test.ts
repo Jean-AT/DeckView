@@ -10,7 +10,9 @@ const FIREBASE_SA = JSON.stringify({
 
 describe('testCredential', () => {
   it('accepts valid Vercel keys', () => {
-    assert.deepEqual(testCredential('VERCEL', 'vercel_abc123def456'), { ok: true });
+    for (const key of ['vercel_abc123def456', 'vcp_abc123def456', 'vci_abc123def456']) {
+      assert.deepEqual(testCredential('VERCEL', key), { ok: true });
+    }
   });
 
   it('rejects Vercel keys with the wrong prefix', () => {
