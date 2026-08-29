@@ -2,7 +2,8 @@
   "name": "devops-dashboard-backend",
   "version": "0.0.1",
   "private": true,
-  "description": "Backend del dashboard DevOps interno (Fase 0)",
+  "license": "MIT",
+  "description": "Self-hosted DevOps dashboard backend (Jenkins, Vercel, GitHub Actions, AWS ECS, Firebase)",
   "engines": {
     "node": ">=20.19"
   },
