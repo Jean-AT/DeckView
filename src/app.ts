@@ -1,9 +1,12 @@
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
+import cors from 'cors';
 import { apiRouter } from './routes';
+import { env } from './config/env';
 
 export function createApp(): Express {
   const app = express();
 
+  app.use(cors({ origin: env.CORS_ORIGINS }));
   app.use(express.json());
 
   app.get('/health', (_req, res) => {

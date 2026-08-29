@@ -8,7 +8,7 @@ export interface CredentialTestResult {
 // TODO Fase 3+: sustituir por una llamada real de solo lectura al proveedor
 // (Vercel: GET /v2/user; GitHub: GET /user; Jenkins: GET /api/json, AWS: ListDeployments, etc.).
 const PROVIDER_KEY_PATTERNS: Record<Provider, RegExp | null> = {
-  VERCEL: /^vercel_/,
+  VERCEL: /^(vercel_|vcp_|vci_)/,
   GITHUB_ACTIONS: /^(ghp_|gho_|github_pat_)/,
   JENKINS: null,
   AWS: null,
