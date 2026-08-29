@@ -37,7 +37,7 @@ npm run dev
 
 UI en http://localhost:5173 (proxy `/api` → `localhost:3000`).
 
-El primer usuario que se registre es **ADMIN**.
+Todo usuario que se registre es **ADMIN**.
 
 Para secretos aleatorios en el backend en vez de los de desarrollo:
 

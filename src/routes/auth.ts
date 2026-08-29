@@ -46,11 +46,8 @@ authRouter.post('/register', async (req, res) => {
     return;
   }
 
-  const userCount = await prisma.user.count();
-  const role = userCount === 0 ? 'ADMIN' : 'VIEWER';
-
   const user = await prisma.user.create({
-    data: { name, email, password: await hashPassword(password), role },
+    data: { name, email, password: await hashPassword(password), role: 'ADMIN' },
   });
 
   await audit.log({
