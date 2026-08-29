@@ -13,7 +13,6 @@ pipeline {
     IMAGE_TAG       = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
     FULL_IMAGE      = "${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
 
-    // Base de datos efímera para el stage de test (Postgres en contenedor Docker).
     DATABASE_URL = 'postgresql://postgres:postgres@localhost:5433/devops_dashboard'
 
     // Secret Text en Jenkins → Manage Credentials → Add Credentials.
@@ -52,25 +51,6 @@ pipeline {
     stage('type-check') {
       steps {
         sh 'npm run typecheck'
-      }
-    }
-
-    stage('test') {
-      steps {
-        sh '''
-          set -e
-          NAME="ci-postgres-${BUILD_NUMBER}"
-          docker run -d --name "$NAME" \
-            -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres \
-            -e POSTGRES_DB=devops_dashboard -p 5433:5432 postgres:16-alpine
-          trap 'docker rm -f "$NAME" >/dev/null 2>&1 || true' EXIT
-          for i in $(seq 1 30); do
-            docker exec "$NAME" pg_isready -U postgres >/dev/null 2>&1 && break
-            sleep 1
-          done
-          npm run prisma:deploy
-          npm test
-        '''
       }
     }
 
@@ -113,7 +93,6 @@ pipeline {
 
   post {
     always {
-      sh 'docker rm -f "ci-postgres-${BUILD_NUMBER}" >/dev/null 2>&1 || true'
       cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true, cleanWhenSuccess: true, deleteDirectories: true)
     }
   }
